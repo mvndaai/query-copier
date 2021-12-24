@@ -1,17 +1,87 @@
 <!DOCTYPE html>
 <html>
-    <head lang="en">
-        <title>Query Copier</title>
-        <meta name="viewport" content="width=device-width, initial-scale=1">
-    </head>
-    <body></body>
-    <script>
-        //navigator?.clipboard.writeText(newClip).then(function() {
-    /* clipboard successfully set */
-  }, function() {
-    /* clipboard write failed */
-  });
-      
-      
-    </script>
+		<head lang="en">
+				<title>Query Copier</title>
+				<meta name="viewport" content="width=device-width, initial-scale=1">
+
+				<style>
+					#alert {
+						position: absolute;
+    				top: 0;
+						left: 50%;
+					}
+					.success { background-color: lightgreen; }
+					.failure { background-color: lightpink; }
+
+				</style>
+		</head>
+		<body>
+				<h1>Query Copier</h1>
+				<p>This auto copies the param for <code>code</code> or you can select otherwise</p>
+
+				<div id='alert'></div>
+				<div id='interactive'></div>
+				<code id='params'></code>
+
+
+		</body>
+		<script>
+			const urlSearchParams = new URLSearchParams(window.location.search);
+			const params = Object.fromEntries(urlSearchParams.entries());
+			console.log(params);
+
+			const popup = (message, type) => {
+				let el = document.createElement('div');
+				el.className = type || 'success'
+				el.innerHTML = message
+
+				let alertEl = document.querySelector('#alert')
+				alertEl.appendChild(el)
+
+				setTimeout(() => el.remove(), 10000)
+			}
+
+
+			const copy = (param) => {
+				// console.log('copying param', param)
+				let value = params[param];
+				(navigator?.clipboard?.writeText?.(value) || Promise.reject())
+				.then(() => {
+					console.log('copied');
+					popup(`Copied value: ${value}`)
+				},() => {
+					console.log('failed to copy, trying with execCommand');
+					popup('Failed to copy hoping backup works', 'failure')
+
+					let element = document.createElement('input');
+					element.value = value;
+					element.select();
+				  document.execCommand("copy");
+				})
+			}
+
+			copy('code')
+			document.querySelector('#params').innerHTML = JSON.stringify(params, '', ' ')
+
+			if (Object.keys(params).length !== 0) {
+				let select = document.createElement('select')
+				for (const key of Object.keys(params)) {
+					// console.log(`${key}: ${value}`)
+
+					let option = document.createElement('option')
+					option.value = key
+					option.innerHTML = key
+					select.appendChild(option)
+				}
+
+				let copyButton = document.createElement('button')
+				copyButton.innerHTML = 'Copy'
+				// console.log('select value', select.value)
+				copyButton.onclick = () => (copy(select.value));
+
+				let el = document.querySelector('#interactive')
+				el.appendChild(select)
+				el.appendChild(copyButton)
+			}
+		</script>
 </html>
